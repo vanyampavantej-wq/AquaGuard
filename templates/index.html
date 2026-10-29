@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AquaGuard - Smart Water Usage Monitor</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+<nav class="navbar navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="/">
+            💧 AquaGuard
+        </a>
+         <button id="themeToggle" class="btn btn-outline-light">
+          🌙 Dark Mode
+        </button>
+    </div>
+</nav>
+
+<div class="container mt-5">
+
+    <div class="text-center mb-5">
+        <h1 class="fw-bold">Smart Water Usage Monitor</h1>
+        <p class="text-muted">
+            Monitor, Manage and Save Water Efficiently
+        </p>
+    </div>
+
+    <div class="row g-4 mb-5">
+
+    <div class="col-md-3">
+        <div class="card shadow text-center p-3">
+            <h2>📄</h2>
+            <h5>Total Records</h5>
+            <h3>{{ total_records }}</h3>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow text-center p-3">
+            <h2>💧</h2>
+            <h5>Total Liters</h5>
+            <h3>{{ total_liters }}</h3>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow text-center p-3">
+            <h2>📅</h2>
+            <h5>Today's Entries</h5>
+            <h3>{{ today_records }}</h3>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow text-center p-3">
+            <h2>📊</h2>
+            <h5>Average Usage</h5>
+            <h3>{{ average_usage }}</h3>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+    <div class="card shadow border-0">
+        <div class="card-body text-center">
+            <h6 class="text-muted">🏆 Highest Consumer</h6>
+
+            {% if highest_consumer %}
+                <h4 class="fw-bold text-primary">
+                    {{ highest_consumer.username }}
+                </h4>
+
+                <p class="mb-0">
+                    {{ highest_consumer.total_usage }} Liters
+                </p>
+            {% else %}
+                <p>No Data Available</p>
+            {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card shadow border-0">
+            <div class="card-body text-center">
+
+                <h6 class="text-muted">
+                💧 Lowest Consumer
+                </h6>
+
+            {% if lowest_consumer %}
+                <h4 class="fw-bold text-success">
+                    {{ lowest_consumer.username }}
+                </h4>
+
+                <p class="mb-0">
+                    {{ lowest_consumer.total_usage }} Liters
+                </p>
+            {% else %}
+                <p>No Data Available</p>
+            {% endif %}
+
+             </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card shadow border-0">
+            <div class="card-body text-center">
+               <h6 class="text-muted">📅 Monthly Usage</h6>
+               <h4 class="fw-bold text-warning">
+                  {{ monthly_usage }} Liters
+               </h4>
+           </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<div class="text-center mt-4">
+
+    <a href="/add" class="btn btn-primary btn-lg me-2">
+        ➕ Add Water Usage
+    </a>
+
+    <a href="/view" class="btn btn-success btn-lg me-2">
+        📄 View Records
+    </a>
+
+    <a href="/export" class="btn btn-warning btn-lg">
+        ⬇ Export CSV
+    </a>
+
+</div>
+<div class="card shadow mt-4">
+    <div class="card-body">
+
+        <form action="/view" method="GET">
+
+            <div class="row">
+
+                <div class="col-md-10">
+                    <input
+                        type="text"
+                        name="search"
+                        class="form-control"
+                        placeholder="🔍 Search by Username, Location or Purpose">
+                </div>
+
+                <div class="col-md-2">
+                    <button class="btn btn-primary w-100">
+                        Search
+                    </button>
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+</div>
+<div class="card shadow-sm mt-4">
+    <div class="card-header bg-success text-white">
+        💧 Water Saving Tips
+    </div>
+
+    <div class="card-body">
+        <div class="alert alert-info text-center mb-3">
+             {{ water_tip }}
+        </div>
+        <ul class="mb-0">
+            <li>🚰 Turn off the tap while brushing your teeth.</li>
+            <li>🛠️ Repair leaking taps and pipes immediately.</li>
+            <li>🚿 Take shorter showers to reduce water usage.</li>
+            <li>🌱 Water plants early in the morning or evening.</li>
+            <li>🪣 Use a bucket instead of a hose for washing vehicles.</li>
+        </ul>
+    </div>
+</div>
+  <div class="card shadow mt-5 p-4">
+
+    <h3 class="text-center mb-4">
+        Water Usage by User
+    </h3>
+
+    <canvas id="usageChart"></canvas>
+
+</div>
+</div>
+    <div class="card mt-4">
+    <div class="card-header bg-success text-white">
+        Water Usage Distribution
+    </div>
+
+    <div class="card-body">
+        <canvas id="pieChart"></canvas>
+    </div>
+</div>
+<div class="card shadow mt-4">
+    <div class="card-header bg-info text-white">
+        📈 Monthly Usage Progress
+    </div>
+
+    <div class="card-body">
+        <p>
+            <strong>{{ monthly_usage }}</strong> /
+            {{ monthly_target }} Liters
+        </p>
+
+        <div class="progress" style="height: 25px;">
+            <div class="progress-bar progress-bar-striped progress-bar-animated"
+                 role="progressbar"
+                 style="width: {{ progress }}%;">
+                {{ progress }}%
+            </div>
+        </div>
+    </div>
+</div>
+<div class="card shadow mt-4">
+    <div class="card-header bg-dark text-white">
+        🏆 Top 5 Water Consumers
+    </div>
+
+    <div class="card-body">
+        {% if top_consumers %}
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>User</th>
+                    <th>Total Liters</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in top_consumers %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ user.username }}</td>
+                    <td>{{ user.total_usage }} Liters</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No data available.</p>
+        {% endif %}
+    </div>
+</div>
+<div class="card shadow mt-4">
+    <div class="card-header bg-secondary text-white">
+        📌 Quick Statistics
+    </div>
+
+    <div class="card-body">
+        <div class="row text-center">
+
+            <div class="col-md-4">
+                <h3>{{ total_users }}</h3>
+                <p>Total Users</p>
+            </div>
+
+            <div class="col-md-4">
+                <h3>{{ total_locations }}</h3>
+                <p>Locations</p>
+            </div>
+
+            <div class="col-md-4">
+                <h3>{{ total_purposes }}</h3>
+                <p>Usage Purposes</p>
+            </div>
+
+        </div>
+    </div>
+</div>
+<div class="card shadow mt-4">
+    <div class="card-header bg-success text-white">
+        ⚙️ System Status
+    </div>
+
+    <div class="card-body text-center">
+        <h4>{{ system_status }}</h4>
+        <p class="text-muted mb-0">
+            Database Connection Active
+        </p>
+    </div>
+</div>
+<div class="card shadow mt-4">
+    <div class="card-header bg-primary text-white">
+        🕒 Recent Activities
+    </div>
+
+    <div class="card-body">
+        {% if recent_records %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Location</th>
+                        <th>Liters</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in recent_records %}
+                    <tr>
+                        <td>{{ record.username }}</td>
+                        <td>{{ record.location }}</td>
+                        <td>{{ record.liters_used }}</td>
+                        <td>{{ record.usage_date }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-center mb-0">No recent records available.</p>
+        {% endif %}
+    </div>
+</div>
+<div class="text-center mt-4 mb-4">
+    <small class="text-muted">
+        Dashboard Generated On:
+        <strong>{{ generated_time }}</strong>
+    </small>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+
+<script>
+   const ctx = document.getElementById("usageChart");
+
+new Chart(ctx, {
+    type: "bar",
+    data: {
+        labels: {{ labels|tojson }},
+        datasets : [{
+            label: "Liters Used",
+            data: {{ values|tojson }},
+            backgroundColor: [
+                "#0d6efd",
+                "#198754",
+                "#ffc107",
+                "#dc3545",
+                "#6610f2",
+                "#20c997"
+            ],
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+</script>
+
+<script>
+const purposeCtx = document.getElementById("pieChart");
+
+new Chart(purposeCtx, {
+    type: "pie",
+    data: {
+        labels: {{ purpose_labels|tojson }},
+        datasets: [{
+            data: {{ purpose_values|tojson }},
+            backgroundColor : [
+                "#0d6efd",
+                "#198754",
+                "#ffc107",
+                "#dc3545",
+                "#6610f2",
+                "#20c997"
+            ]
+        }]
+    },
+    options: {
+        responsive: true
+    }
+});
+</script>
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+</body>
+</html>
